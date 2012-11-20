@@ -1,0 +1,2 @@
+This will be a project for some work with video. Regrettably, I still don't know myself, what exactly it will do.
+Это будет проект с обработкой видео. К сожалению, я сама еще не знаю, что конкретно он будет делать.
