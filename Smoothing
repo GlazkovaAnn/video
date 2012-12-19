@@ -1,0 +1,100 @@
+#include <opencv2/opencv.hpp>
+
+#ifdef _MSC_VER
+# if CV_MAJOR_VERSION == 2 && CV_MINOR_VERSION == 4 && CV_SUBMINOR_VERSION == 3
+// OpenCV 2.4.3
+#  if defined(_DEBUG)
+#  pragma comment(lib, "opencv_core243d.lib")
+#  pragma comment(lib, "opencv_highgui243d.lib")
+#  pragma comment(lib, "opencv_imgproc243d.lib")
+#  pragma comment(lib, "opencv_video243d.lib")
+#  pragma comment(lib, "opencv_ml243d.lib")
+
+#  pragma comment(lib, "opencv_calib3d243d.lib")
+#  pragma comment(lib, "opencv_objdetect243d.lib")
+#  pragma comment(lib, "opencv_features2d243d.lib")
+#  pragma comment(lib, "opencv_contrib243d.lib")
+#  pragma comment(lib, "opencv_ts243d.lib")
+#  pragma comment(lib, "opencv_legacy243d.lib")
+#  pragma comment(lib, "opencv_flann243d.lib")
+#  pragma comment(lib, "opencv_gpu243d.lib")
+# else
+#  pragma comment(lib, "opencv_core243.lib")
+#  pragma comment(lib, "opencv_highgui243.lib")
+#  pragma comment(lib, "opencv_imgproc243.lib")
+#  pragma comment(lib, "opencv_video243.lib")
+#  pragma comment(lib, "opencv_ml243.lib")
+
+#  pragma comment(lib, "opencv_calib3d243.lib")
+#  pragma comment(lib, "opencv_objdetect243.lib")
+#  pragma comment(lib, "opencv_features2d243.lib")
+#  pragma comment(lib, "opencv_contrib243.lib")
+#  pragma comment(lib, "opencv_ts243.lib")
+#  pragma comment(lib, "opencv_legacy243.lib")
+#  pragma comment(lib, "opencv_flann243.lib")
+#  pragma comment(lib, "opencv_gpu243.lib")
+# endif //#  if defined(_DEBUG)
+
+# endif //# if CV_MAJOR_VERSION == 2 && CV_MINOR_VERSION == 3
+#endif //#ifdef _MSC_VER
+/*int main()
+{
+        cv::Mat img = cv::imread("Image0.jpg");
+        cv::imshow("img", img);
+        cv::waitKey(0);
+        return 0;
+}*/
+#include <cv.h>
+#include <highgui.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+IplImage* image = 0;
+IplImage* dst = 0;
+
+IplImage* frame =0;
+
+int main(int argc, char* argv[])
+{
+        char* filename = argc == 2 ? argv[1] : "Film.avi"; // название видео
+  	printf("[i] file: %s\n", filename);
+		cvNamedWindow("original",CV_WINDOW_AUTOSIZE);// окно для отображения картинки
+        CvCapture* capture = cvCreateFileCapture( filename ); // получаем информацию о видео-файле
+
+        while(1)
+		{
+            frame = cvQueryFrame( capture ); // получаем следующий кадр
+            if( !frame ) 
+			{
+				break;
+            }
+
+            // начало обработки
+            dst = cvCloneImage(frame); // копируем кадр
+
+			/*printf("[i] frame: %s\n", filename);*/
+			assert( frame != 0 );
+
+			cvNamedWindow("original",CV_WINDOW_AUTOSIZE);// окно для отображения картинки
+			cvNamedWindow("smooth",CV_WINDOW_AUTOSIZE);
+
+            cvSmooth(frame, dst, CV_GAUSSIAN, 9, 9);// сглаживаем исходную картинку
+
+		    cvShowImage("original",frame);// показываем картинку
+			cvShowImage("smooth",dst);
+			//конец обработки видео
+
+			cvShowImage( "original", frame );// показываем кадр
+
+            char c = cvWaitKey(5);
+            if (c == 27) 
+			{ 
+               break;
+            }
+        }
+
+        cvReleaseCapture( &capture );// освобождаем ресурсы
+        cvDestroyWindow("original");// удаляем окно
+        return 0;
+}
+
