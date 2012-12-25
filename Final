@@ -1,0 +1,191 @@
+#include <opencv2/opencv.hpp>
+
+#ifdef _MSC_VER
+# if CV_MAJOR_VERSION == 2 && CV_MINOR_VERSION == 4 && CV_SUBMINOR_VERSION == 3
+// OpenCV 2.3.1
+#  if defined(_DEBUG)
+#  pragma comment(lib, "opencv_core243d.lib")
+#  pragma comment(lib, "opencv_highgui243d.lib")
+#  pragma comment(lib, "opencv_imgproc243d.lib")
+#  pragma comment(lib, "opencv_video243d.lib")
+#  pragma comment(lib, "opencv_ml243d.lib")
+
+#  pragma comment(lib, "opencv_calib3d243d.lib")
+#  pragma comment(lib, "opencv_objdetect243d.lib")
+#  pragma comment(lib, "opencv_features2d243d.lib")
+#  pragma comment(lib, "opencv_contrib243d.lib")
+#  pragma comment(lib, "opencv_ts243d.lib")
+#  pragma comment(lib, "opencv_legacy243d.lib")
+#  pragma comment(lib, "opencv_flann243d.lib")
+#  pragma comment(lib, "opencv_gpu243d.lib")
+# else
+#  pragma comment(lib, "opencv_core243.lib")
+#  pragma comment(lib, "opencv_highgui243.lib")
+#  pragma comment(lib, "opencv_imgproc243.lib")
+#  pragma comment(lib, "opencv_video243.lib")
+#  pragma comment(lib, "opencv_ml243.lib")
+
+#  pragma comment(lib, "opencv_calib3d243.lib")
+#  pragma comment(lib, "opencv_objdetect243.lib")
+#  pragma comment(lib, "opencv_features2d243.lib")
+#  pragma comment(lib, "opencv_contrib243.lib")
+#  pragma comment(lib, "opencv_ts243.lib")
+#  pragma comment(lib, "opencv_legacy243.lib")
+#  pragma comment(lib, "opencv_flann243.lib")
+#  pragma comment(lib, "opencv_gpu243.lib")
+# endif //#  if defined(_DEBUG)
+
+# endif //# if CV_MAJOR_VERSION == 2 && CV_MINOR_VERSION == 3
+#endif //#ifdef _MSC_VER
+
+IplImage* frame = 0;
+IplImage* dst = 0;
+IplImage* dst2 = 0;
+IplImage* gray = 0;
+IplImage* test = 0;
+IplImage* dstFinal = 0;
+
+
+int clar = 5;
+int maxClar = 10;
+
+void myTrackbarClar(int pos) {
+        clar = pos;
+}
+
+
+int bright = 5;
+int maxBright = 10;
+
+void myTrackbarBright(int pos) {
+        bright = pos;
+}
+int flag =0;
+void myMouseCallback( int event, int x, int y, int flags, void* param )
+{
+        IplImage* img = (IplImage*) param;
+
+        switch( event ){
+                case CV_EVENT_MOUSEMOVE: 
+                        break;
+
+                case CV_EVENT_LBUTTONDOWN:
+                        if(flag==0)
+  						flag=1;
+						else
+							flag=0;
+                        break;
+
+                case CV_EVENT_LBUTTONUP:
+                        break;
+        }
+}
+
+
+int main(int argc, char* argv[])
+{
+        
+        char* filename =  "test.avi";
+
+        printf("[i] file: %s\n", filename);
+
+		cvNamedWindow("original",CV_WINDOW_AUTOSIZE);
+
+		CvCapture* capture = cvCreateFileCapture( filename );
+		cvCreateTrackbar("Clarity", "original", &clar, maxClar, myTrackbarClar);
+		cvCreateTrackbar("Brightness", "original", &bright, maxBright, myTrackbarBright);
+		
+		
+
+		double fps = cvGetCaptureProperty ( capture,CV_CAP_PROP_FPS);
+
+    CvSize size = cvSize( (int)cvGetCaptureProperty( capture, CV_CAP_PROP_FRAME_WIDTH),(int)cvGetCaptureProperty( capture, CV_CAP_PROP_FRAME_HEIGHT));
+
+    CvVideoWriter *writer = cvCreateVideoWriter( "test2.avi",CV_FOURCC('M','J','P','G'),fps,size);
+        assert(writer!=0);
+		cvSetMouseCallback( "original", myMouseCallback, (void*) frame);
+		while(1){
+                
+			if(!cvGrabFrame(capture))
+				break;
+                frame = cvRetrieveFrame( capture ); 
+				
+                if( !frame ) {
+                        break;
+                }
+						
+					
+     
+					
+				dst = cvCloneImage(frame);
+				dstFinal = cvCloneImage(frame);
+
+				float kernel[9];
+				kernel[0]=0 -(clar-5)*0.1;
+				kernel[1]=0-(clar-5)*0.1;
+				kernel[2]=0-(clar-5)*0.1;
+
+				kernel[3]=0-(clar-5)*0.1;
+				kernel[4]=1+(clar-5)*0.5;
+				kernel[5]=0-(clar-5)*0.1;
+
+				kernel[6]=0-(clar-5)*0.1;
+				kernel[7]=0-(clar-5)*0.1;
+				kernel[8]=0-(clar-5)*0.1;
+			
+				CvMat kernel_matrix=cvMat(3,3,CV_32FC1,kernel);
+				cvFilter2D(frame,dst,&kernel_matrix,cvPoint(-1,-1));
+
+				float kernelB[9];
+				kernelB[0]=-0.1;
+				kernelB[1]= 0+(bright -5)*0.05;
+				kernelB[2]=-0.1;
+
+				kernelB[3]= 0+(bright -5)*0.05;
+				kernelB[4]=1;
+				kernelB[5]= 0+(bright -5)*0.05;
+
+				kernelB[6]=-0.1;
+				kernelB[7]= 0+(bright -5)*0.05;
+				kernelB[8]=-0.1;
+			
+				CvMat kernel_matrixB=cvMat(3,3,CV_32FC1,kernelB);
+				cvFilter2D(dst,dstFinal,&kernel_matrixB,cvPoint(-1,-1));
+				
+				if(flag==1)
+				{
+					gray = cvCreateImage( cvGetSize(dstFinal), IPL_DEPTH_8U, 1 );
+					dst2 = cvCreateImage( cvGetSize(dstFinal), IPL_DEPTH_8U, 1 );
+
+					cvCvtColor(dstFinal, gray, CV_RGB2GRAY);
+					
+					cvCanny(gray, dst2, 10, 100, 3);
+					
+					cvSub(gray, dst2, dst2);
+					cvWriteFrame(writer, dst2);
+				 //cvShowImage( "original", dstFinal );
+					
+				cvShowImage( "original", dst2 );
+				}
+				else
+				{
+					
+				 //cvShowImage( "original", dstFinal );
+					cvShowImage( "original", dstFinal );
+				}
+				cvWriteFrame(writer, dstFinal);
+
+				 char c = cvWaitKey(33);
+             if (c == 27) { 
+                      break;
+             }
+				
+        }
+
+		 cvReleaseCapture( &capture );
+       cvReleaseVideoWriter(&writer);
+
+        cvDestroyWindow("original");
+
+		return 0;
+}
